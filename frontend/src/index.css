@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+/* ===== FUENTES ===== */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
+/* ===== VARIABLES ===== */
+:root {
+  --utc-green: #00693E;
+  --utc-green-light: #00875A;
+  --utc-green-dark: #004D2C;
+  --utc-gold: #C5A248;
+  --utc-gold-light: #D4B968;
+  --bg-primary: #F8F7F4;
+  --bg-chat: #FFFFFF;
+  --bg-user-msg: #00693E;
+  --bg-bot-msg: #F0EFEB;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-on-green: #FFFFFF;
+  --border-light: #E5E4E0;
+}
+
+/* ===== BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ===== SCROLLBAR ===== */
+.chat-messages::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: #D1D0CC;
+  border-radius: 10px;
+}
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #B0AFA9;
+}
+
+/* ===== TYPING ANIMATION ===== */
+@keyframes bounce-dot {
+  0%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #999;
+  display: inline-block;
+  margin: 0 2px;
+}
+.typing-dot:nth-child(1) { animation: bounce-dot 1.2s infinite 0s; }
+.typing-dot:nth-child(2) { animation: bounce-dot 1.2s infinite 0.15s; }
+.typing-dot:nth-child(3) { animation: bounce-dot 1.2s infinite 0.3s; }
+
+/* ===== FADE IN ===== */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.msg-appear {
+  animation: fade-up 0.3s ease-out forwards;
+}
+
+/* ===== PULSE GLOW ===== */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 105, 62, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 105, 62, 0);
+  }
+}
+
+.send-btn:not(:disabled):hover {
+  animation: pulse-glow 1.5s infinite;
+}
+
+/* ===== MARKDOWN IN MESSAGES ===== */
+.bot-message ul, .bot-message ol {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+.bot-message li {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+.bot-message p {
+  margin: 0.4rem 0;
+  line-height: 1.6;
+}
+.bot-message strong {
+  font-weight: 600;
+}
