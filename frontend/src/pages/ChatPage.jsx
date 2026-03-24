@@ -7,30 +7,35 @@ import SuggestedQuestions from '../components/SuggestedQuestions'
 import AuthModal from '../components/AuthModal'
 import Sidebar from '../components/Sidebar'
 
-const WELCOME_MESSAGE = {
-  role: 'assistant',
-  content:
-    '¡Hola! 👋 Soy **UTC Bot**, el asistente virtual de la **Universidad Tecnológica de Cancún**.\n\nPuedo ayudarte con información sobre:\n\n* Carreras y oferta educativa\n* Trámites y servicios escolares\n* Proceso de admisión e inscripción\n* Titulación y estadías\n* Contacto y ubicación\n\n¿En qué puedo ayudarte hoy?',
-}
-
 export default function ChatPage() {
-  const { user } = useAuth()
-  const [messages, setMessages] = useState([WELCOME_MESSAGE])
+  const { user, loading: authLoading } = useAuth()
+  const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState(null)
   const [showAuth, setShowAuth] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
+  const [hasSkippedAuth, setHasSkippedAuth] = useState(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Show auth popup on first load (if not logged in)
+  useEffect(() => {
+    if (!authLoading && !user && !hasSkippedAuth) {
+      setShowAuth(true)
+    }
+  }, [authLoading, user])
+
+  // Close auth when user logs in
+  useEffect(() => {
+    if (user) setShowAuth(false)
+  }, [user])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages, isLoading])
+  useEffect(() => { scrollToBottom() }, [messages, isLoading])
 
   const handleSend = async (text = null) => {
     const question = (text || input).trim()
@@ -43,22 +48,14 @@ export default function ChatPage() {
 
     try {
       const response = await sendMessage(question, sessionId)
-      const botMessage = { role: 'assistant', content: response.answer }
-      setMessages((prev) => [...prev, botMessage])
-
-      if (response.session_id && !sessionId) {
-        setSessionId(response.session_id)
-      }
+      setMessages((prev) => [...prev, { role: 'assistant', content: response.answer }])
+      if (response.session_id && !sessionId) setSessionId(response.session_id)
     } catch (error) {
       console.error('Error:', error)
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content:
-            'Lo siento, hubo un error al procesar tu pregunta. Intenta de nuevo o contacta a la universidad al **(998) 881 19 00**.',
-        },
-      ])
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        content: 'Hubo un error al procesar tu pregunta. Intenta de nuevo.',
+      }])
     } finally {
       setIsLoading(false)
       inputRef.current?.focus()
@@ -66,106 +63,104 @@ export default function ChatPage() {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   const handleNewChat = () => {
-    setMessages([WELCOME_MESSAGE])
+    setMessages([])
     setSessionId(null)
     setInput('')
   }
 
-  const handleSelectSession = async (selectedSessionId) => {
+  const handleSelectSession = async (id) => {
     try {
-      const data = await getSessionMessages(selectedSessionId)
-      const loaded = data.messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }))
-      setMessages(loaded.length > 0 ? loaded : [WELCOME_MESSAGE])
-      setSessionId(selectedSessionId)
-    } catch (err) {
-      console.error('Error loading session:', err)
-    }
+      const data = await getSessionMessages(id)
+      const loaded = data.messages.map((m) => ({ role: m.role, content: m.content }))
+      setMessages(loaded)
+      setSessionId(id)
+    } catch (err) { console.error(err) }
+  }
+
+  const handleSkipAuth = () => {
+    setHasSkippedAuth(true)
+    setShowAuth(false)
+  }
+
+  const showWelcome = messages.length === 0
+
+  // Loading screen
+  if (authLoading) {
+    return (
+      <div className="h-full flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+        <div className="animate-float">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="h-full flex w-full">
-      {/* Sidebar - solo si está logueado */}
-      {user && (
-        <Sidebar
-          currentSessionId={sessionId}
-          onSelectSession={handleSelectSession}
-          onNewChat={handleNewChat}
-          isOpen={showSidebar}
-          onClose={() => setShowSidebar(false)}
-        />
-      )}
+      {/* Sidebar */}
+      <Sidebar
+        currentSessionId={sessionId}
+        onSelectSession={handleSelectSession}
+        onNewChat={handleNewChat}
+        isOpen={showSidebar}
+        onClose={() => setShowSidebar(false)}
+      />
 
-      {/* Chat principal */}
-      <div className="flex-1 flex flex-col max-w-3xl mx-auto w-full">
+      {/* Main */}
+      <div className="flex-1 flex flex-col relative" style={{ background: 'var(--bg-primary)' }}>
         {/* Header */}
-        <header
-          className="flex items-center justify-between px-5 py-3.5 border-b"
-          style={{ borderColor: 'var(--border-light)' }}
-        >
-          <div className="flex items-center gap-3">
-            {user && (
-              <button
-                onClick={() => setShowSidebar(true)}
-                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors lg:hidden"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 12h18M3 6h18M3 18h18" />
-                </svg>
-              </button>
-            )}
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm"
-              style={{ background: 'var(--utc-green)' }}
+        <header className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
-              UT
-            </div>
-            <div>
-              <h1 className="text-[15px] font-semibold leading-tight">UTC Bot</h1>
-              <p className="text-[12px] leading-tight" style={{ color: 'var(--text-secondary)' }}>
-                Asistente UT Cancún BIS
-              </p>
-            </div>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+            <span className="text-[14px] font-semibold" style={{ color: 'var(--text-primary)' }}>
+              NousBot
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              <span className="text-[11px] font-medium text-green-700">En línea</span>
-            </div>
-
+            {/* New chat */}
             <button
               onClick={handleNewChat}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              title="Nueva conversación"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              title="Nuevo chat"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
             </button>
 
             {user ? (
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white"
-                style={{ background: 'var(--utc-green)' }}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium text-white"
+                style={{ background: 'var(--accent)' }}
                 title={user.email}
               >
-                {user.email?.[0]?.toUpperCase() || 'U'}
+                {user.email?.[0]?.toUpperCase()}
               </div>
             ) : (
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-white transition-opacity hover:opacity-90"
-                style={{ background: 'var(--utc-green)' }}
+                className="px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
               >
                 Iniciar sesión
               </button>
@@ -173,63 +168,79 @@ export default function ChatPage() {
           </div>
         </header>
 
-        {/* Messages */}
-        <div className="chat-messages flex-1 overflow-y-auto px-5 py-6" style={{ background: 'var(--bg-primary)' }}>
-          <div className="space-y-4">
-            {messages.map((msg, i) => (
-              <MessageBubble key={i} message={msg} />
-            ))}
-            {isLoading && <TypingIndicator />}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {messages.length === 1 && !isLoading && (
+        {/* Chat area */}
+        {showWelcome ? (
+          <div className="flex-1 flex flex-col items-center justify-center px-4">
+            <div className="animate-float mb-6">
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+              ¿En qué puedo ayudarte?
+            </h2>
+            <p className="text-[14px] mb-8" style={{ color: 'var(--text-secondary)' }}>
+              Pregunta sobre carreras, trámites, admisión y más
+            </p>
             <SuggestedQuestions onClick={(q) => handleSend(q)} />
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-2xl mx-auto px-4 py-6">
+              {messages.map((msg, i) => (
+                <MessageBubble key={i} message={msg} />
+              ))}
+              {isLoading && <TypingIndicator />}
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+        )}
 
         {/* Input */}
-        <div
-          className="px-5 py-3.5 border-t"
-          style={{ borderColor: 'var(--border-light)', background: 'var(--bg-chat)' }}
-        >
-          <div
-            className="flex items-end gap-2 rounded-2xl border px-4 py-2.5 transition-all focus-within:border-[var(--utc-green)] focus-within:shadow-[0_0_0_3px_rgba(0,105,62,0.08)]"
-            style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-light)' }}
-          >
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Escribe tu pregunta sobre la UT Cancún..."
-              rows={1}
-              className="flex-1 bg-transparent resize-none outline-none text-[14px] leading-relaxed py-0.5 placeholder:text-gray-400"
-              style={{ maxHeight: '120px', minHeight: '24px' }}
-              onInput={(e) => {
-                e.target.style.height = '24px'
-                e.target.style.height = e.target.scrollHeight + 'px'
-              }}
-            />
-            <button
-              onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
-              className="send-btn flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: input.trim() ? 'var(--utc-green)' : 'var(--border-light)' }}
+        <div className="px-4 pb-4 pt-2">
+          <div className="max-w-2xl mx-auto">
+            <div
+              className="flex items-end gap-2 rounded-2xl border px-4 py-3 transition-all focus-within:border-[var(--text-tertiary)]"
+              style={{ background: 'var(--bg-input)', borderColor: 'var(--border-primary)' }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 2L11 13" />
-                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-              </svg>
-            </button>
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Pregunta algo..."
+                rows={1}
+                className="flex-1 bg-transparent resize-none outline-none text-[14px] leading-relaxed py-0.5 placeholder:text-[var(--text-tertiary)]"
+                style={{ color: 'var(--text-primary)', maxHeight: '150px', minHeight: '24px' }}
+                onInput={(e) => { e.target.style.height = '24px'; e.target.style.height = e.target.scrollHeight + 'px' }}
+              />
+              <button
+                onClick={() => handleSend()}
+                disabled={!input.trim() || isLoading}
+                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all disabled:opacity-20"
+                style={{ background: input.trim() ? 'var(--text-primary)' : 'var(--text-tertiary)', color: 'var(--bg-primary)' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"/>
+                </svg>
+              </button>
+            </div>
+            <p className="text-center text-[11px] mt-2" style={{ color: 'var(--text-tertiary)' }}>
+              NousBot puede cometer errores. Verifica la información importante.
+            </p>
           </div>
-          <p className="text-center text-[11px] mt-2" style={{ color: 'var(--text-secondary)' }}>
-            UTC Bot puede cometer errores. Verifica la información importante.
-          </p>
         </div>
       </div>
 
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {/* Auth modal - shows on first load */}
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onSkip={handleSkipAuth}
+        />
+      )}
     </div>
   )
 }

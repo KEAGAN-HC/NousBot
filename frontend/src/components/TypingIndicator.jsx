@@ -1,20 +1,25 @@
 export default function TypingIndicator() {
   return (
-    <div className="msg-appear flex justify-start">
-      <div className="flex gap-2.5">
-        <div
-          className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white text-[11px] font-bold mt-0.5"
-          style={{ background: 'var(--utc-green)' }}
-        >
-          UT
-        </div>
-        <div
-          className="rounded-2xl rounded-bl-md px-5 py-4 flex items-center gap-0.5"
-          style={{ background: 'var(--bg-bot-msg)' }}
-        >
-          <span className="typing-dot" />
-          <span className="typing-dot" />
-          <span className="typing-dot" />
+    <div className="msg-appear flex gap-3 mb-6">
+      <div
+        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-1"
+        style={{ background: 'var(--accent)' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div className="flex items-center pt-1">
+        <div className="thinking-bars">
+          <div className="bar" />
+          <div className="bar" />
+          <div className="bar" />
+          <div className="bar" />
+          <div className="bar" />
+          <div className="bar" />
+          <div className="bar" />
         </div>
       </div>
     </div>

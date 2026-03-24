@@ -1,125 +1,104 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ===== FUENTES ===== */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
-
-/* ===== VARIABLES ===== */
 :root {
-  --utc-green: #00693E;
-  --utc-green-light: #00875A;
-  --utc-green-dark: #004D2C;
-  --utc-gold: #C5A248;
-  --utc-gold-light: #D4B968;
-  --bg-primary: #F8F7F4;
-  --bg-chat: #FFFFFF;
-  --bg-user-msg: #00693E;
-  --bg-bot-msg: #F0EFEB;
-  --text-primary: #1A1A1A;
-  --text-secondary: #6B6B6B;
-  --text-on-green: #FFFFFF;
-  --border-light: #E5E4E0;
-}
-
-/* ===== BASE ===== */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+  --bg-primary: #0d0d0d;
+  --bg-secondary: #171717;
+  --bg-tertiary: #1e1e1e;
+  --bg-hover: #2a2a2a;
+  --bg-active: #333333;
+  --bg-input: #2a2a2a;
+  --bg-user-msg: #2a2a2a;
+  --bg-bot-msg: transparent;
+  --text-primary: #ececec;
+  --text-secondary: #9a9a9a;
+  --text-tertiary: #666666;
+  --text-link: #7ab8ff;
+  --border-primary: #2e2e2e;
+  --border-subtle: #222222;
+  --accent: #10a37f;
+  --accent-hover: #0e8c6d;
+  --accent-subtle: rgba(16, 163, 127, 0.12);
+  --danger: #ef4444;
+  --font-body: 'Instrument Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  height: 100vh;
-  height: 100dvh;
-}
+#root { height: 100vh; height: 100dvh; }
 
-/* ===== SCROLLBAR ===== */
-.chat-messages::-webkit-scrollbar {
-  width: 5px;
-}
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-.chat-messages::-webkit-scrollbar-thumb {
-  background: #D1D0CC;
-  border-radius: 10px;
-}
-.chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #B0AFA9;
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-primary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
 
-/* ===== TYPING ANIMATION ===== */
-@keyframes bounce-dot {
-  0%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-6px);
-  }
-}
-
-.typing-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #999;
-  display: inline-block;
-  margin: 0 2px;
-}
-.typing-dot:nth-child(1) { animation: bounce-dot 1.2s infinite 0s; }
-.typing-dot:nth-child(2) { animation: bounce-dot 1.2s infinite 0.15s; }
-.typing-dot:nth-child(3) { animation: bounce-dot 1.2s infinite 0.3s; }
-
-/* ===== FADE IN ===== */
+/* === Animations === */
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes shine {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 0%; }
+}
+@keyframes thinking-bar {
+  0%, 100% { height: 3px; }
+  50% { height: 100%; }
 }
 
-.msg-appear {
-  animation: fade-up 0.3s ease-out forwards;
-}
+.msg-appear { animation: fade-up 0.25s ease-out forwards; }
+.animate-shine { animation: shine 8s ease-in-out infinite; }
+.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+.animate-scale-up { animation: scale-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-float { animation: float 3s ease-in-out infinite; }
 
-/* ===== PULSE GLOW ===== */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 105, 62, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(0, 105, 62, 0);
-  }
+/* === Thinking bars === */
+.thinking-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 28px;
 }
+.thinking-bars .bar {
+  width: 3px;
+  height: 3px;
+  border-radius: 2px;
+  animation: thinking-bar 1.2s ease-in-out infinite;
+}
+.thinking-bars .bar:nth-child(1) { background: #10a37f; animation-delay: 0s; }
+.thinking-bars .bar:nth-child(2) { background: #15b88e; animation-delay: 0.1s; }
+.thinking-bars .bar:nth-child(3) { background: #1acc9d; animation-delay: 0.2s; }
+.thinking-bars .bar:nth-child(4) { background: #20dfac; animation-delay: 0.3s; }
+.thinking-bars .bar:nth-child(5) { background: #1acc9d; animation-delay: 0.4s; }
+.thinking-bars .bar:nth-child(6) { background: #15b88e; animation-delay: 0.3s; }
+.thinking-bars .bar:nth-child(7) { background: #10a37f; animation-delay: 0.2s; }
 
-.send-btn:not(:disabled):hover {
-  animation: pulse-glow 1.5s infinite;
-}
+/* === Bot message markdown === */
+.bot-msg p { margin: 0.35rem 0; line-height: 1.65; }
+.bot-msg ul, .bot-msg ol { padding-left: 1.25rem; margin: 0.4rem 0; }
+.bot-msg li { margin: 0.2rem 0; line-height: 1.55; }
+.bot-msg strong { font-weight: 600; color: var(--text-primary); }
+.bot-msg a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+.bot-msg code { font-family: var(--font-mono); font-size: 0.85em; background: var(--bg-tertiary); padding: 0.15em 0.4em; border-radius: 4px; }
 
-/* ===== MARKDOWN IN MESSAGES ===== */
-.bot-message ul, .bot-message ol {
-  padding-left: 1.25rem;
-  margin: 0.5rem 0;
-}
-.bot-message li {
-  margin: 0.25rem 0;
-  line-height: 1.5;
-}
-.bot-message p {
-  margin: 0.4rem 0;
-  line-height: 1.6;
-}
-.bot-message strong {
-  font-weight: 600;
-}
+::selection { background: var(--accent); color: white; }
+textarea { font-family: var(--font-body); }

@@ -1,82 +1,55 @@
 import { useMemo } from 'react'
 
 function parseMarkdown(text) {
-  // Bold
   let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-
-  // Italic
   html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-
-  // Unordered lists
   html = html.replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>')
   html = html.replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
-
-  // Numbered lists
   html = html.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
-
-  // Line breaks into paragraphs
-  html = html
-    .split('\n\n')
-    .map((p) => {
-      p = p.trim()
-      if (!p) return ''
-      if (
-        p.startsWith('<ul>') ||
-        p.startsWith('<ol>') ||
-        p.startsWith('<li>')
-      )
-        return p
-      return `<p>${p}</p>`
-    })
-    .join('')
-
-  // Single line breaks within paragraphs
+  html = html.split('\n\n').map((p) => {
+    p = p.trim()
+    if (!p) return ''
+    if (p.startsWith('<ul>') || p.startsWith('<ol>') || p.startsWith('<li>')) return p
+    return `<p>${p}</p>`
+  }).join('')
   html = html.replace(/(?<!<\/li>)\n(?!<)/g, '<br/>')
-
   return html
 }
 
 export default function MessageBubble({ message }) {
   const isUser = message.role === 'user'
-  const html = useMemo(
-    () => (isUser ? null : parseMarkdown(message.content)),
-    [message.content, isUser]
-  )
+  const html = useMemo(() => (isUser ? null : parseMarkdown(message.content)), [message.content, isUser])
 
-  return (
-    <div
-      className={`msg-appear flex ${isUser ? 'justify-end' : 'justify-start'}`}
-    >
-      <div className={`flex gap-2.5 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-        {/* Avatar */}
-        {!isUser && (
-          <div
-            className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white text-[11px] font-bold mt-0.5"
-            style={{ background: 'var(--utc-green)' }}
-          >
-            UT
-          </div>
-        )}
-
-        {/* Bubble */}
+  if (isUser) {
+    return (
+      <div className="msg-appear flex justify-end mb-4">
         <div
-          className={`rounded-2xl px-4 py-3 text-[14px] leading-relaxed ${
-            isUser
-              ? 'text-white rounded-br-md'
-              : 'bot-message rounded-bl-md'
-          }`}
-          style={{
-            background: isUser ? 'var(--bg-user-msg)' : 'var(--bg-bot-msg)',
-            color: isUser ? 'var(--text-on-green)' : 'var(--text-primary)',
-          }}
+          className="max-w-[75%] rounded-3xl px-5 py-3 text-[15px] leading-relaxed"
+          style={{ background: 'var(--bg-user-msg)', color: 'var(--text-primary)' }}
         >
-          {isUser ? (
-            <p>{message.content}</p>
-          ) : (
-            <div dangerouslySetInnerHTML={{ __html: html }} />
-          )}
+          {message.content}
         </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="msg-appear flex gap-3 mb-6">
+      <div
+        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-1"
+        style={{ background: 'var(--accent)' }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+          <path d="M2 17l10 5 10-5"/>
+          <path d="M2 12l10 5 10-5"/>
+        </svg>
+      </div>
+      <div
+        className="bot-msg flex-1 text-[15px] leading-relaxed"
+        style={{ color: 'var(--text-primary)' }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     </div>
   )
 }
